@@ -1,16 +1,29 @@
 import { appendIcon } from '../utils/icons';
 
+export type MonthHeatmapOptions = {
+	onTitleClick?: () => void;
+	onDateClick?: (date: Date) => void;
+};
+
 export class MonthHeatmap {
 	private container: HTMLElement;
 	private grid: HTMLElement;
+	private onTitleClick?: () => void;
+	private onDateClick?: (date: Date) => void;
 
-	constructor(parent: HTMLElement) {
+	constructor(parent: HTMLElement, options?: MonthHeatmapOptions) {
 		this.container = parent.createDiv('time-grid-module month-heatmap');
-		
+		this.onTitleClick = options?.onTitleClick;
+		this.onDateClick = options?.onDateClick;
+
 		// 标题栏
 		const header = this.container.createDiv('module-header');
-		header.createSpan({ text: '本月', cls: 'module-title' });
+		const titleEl = header.createSpan({ text: '本月', cls: 'module-title' });
 		appendIcon(header, 'month');
+		if (this.onTitleClick) {
+			header.addClass('clickable');
+			header.addEventListener('click', this.onTitleClick);
+		}
 
 		// 网格容器
 		this.grid = this.container.createDiv('heatmap-grid');
@@ -48,6 +61,11 @@ export class MonthHeatmap {
 		for (let day = 1; day <= daysInMonth; day++) {
 			const cell = this.grid.createDiv('day-cell');
 			cell.textContent = day.toString();
+			const cellDate = new Date(year, month, day);
+			if (this.onDateClick) {
+				cell.addClass('clickable');
+				cell.addEventListener('click', () => this.onDateClick?.(cellDate));
+			}
 
 			const isPast = day < today;
 			const isToday = day === today;

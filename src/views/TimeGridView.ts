@@ -3,6 +3,7 @@ import { MonthHeatmap } from '../components/MonthHeatmap';
 import { DayGrid } from '../components/DayGrid';
 import { HourGrid } from '../components/HourGrid';
 import { DailyPieChart } from '../components/DailyPieChart';
+import { openOrCreateDailyNoteForDate, openOrCreateTodayDailyNote } from '../utils/dailyNotes';
 
 export const TIME_GRID_VIEW = 'time-grid-view';
 
@@ -34,7 +35,10 @@ export class TimeGridView extends ItemView {
 		const wrapper = container.createDiv('time-grid-wrapper');
 
 		// 初始化三个组件
-		this.monthHeatmap = new MonthHeatmap(wrapper);
+		this.monthHeatmap = new MonthHeatmap(wrapper, {
+			onTitleClick: () => void openOrCreateTodayDailyNote(this.app),
+			onDateClick: (date) => void openOrCreateDailyNoteForDate(this.app, date, true),
+		});
 		this.dayGrid = new DayGrid(wrapper);
 		this.hourGrid = new HourGrid(wrapper);
 		this.dailyPieChart = new DailyPieChart(wrapper, this.app);
