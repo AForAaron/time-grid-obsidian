@@ -1,8 +1,7 @@
 import { App, TFile } from 'obsidian';
 import { appendIcon } from '../utils/icons';
-import { aggregateDurations, extractSimpleTimeTracker, getDailyNotePath } from '../utils/dailyNotesParser';
-
-const DAILY_NOTES_PATH = 'Daily Notes';
+import { aggregateDurations, extractSimpleTimeTracker } from '../utils/dailyNotesParser';
+import { getDailyNoteFileForDate } from '../utils/dailyNotes';
 
 const COLOR_CLASSES = [
 	'tg-pie-slice-0',
@@ -45,13 +44,13 @@ export class DailyPieChart {
 	}
 
 	private async refresh(now: Date): Promise<void> {
-		const filePath = getDailyNotePath(DAILY_NOTES_PATH, now);
-		const file = this.app.vault.getAbstractFileByPath(filePath);
+		const file = getDailyNoteFileForDate(this.app, now);
 		if (!(file instanceof TFile)) {
 			this.renderEmpty();
 			return;
 		}
 
+		const filePath = file.path;
 		if (this.lastFilePath === filePath && this.lastMtime === file.stat.mtime) {
 			return;
 		}

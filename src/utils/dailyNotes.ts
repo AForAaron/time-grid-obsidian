@@ -60,6 +60,16 @@ export async function openOrCreateDailyNoteForDate(
 	}
 }
 
+export function getDailyNoteFileForDate(app: App, date: Date): TFile | null {
+	if (!appHasDailyNotesPluginLoaded()) {
+		return null;
+	}
+	const momentDate = getMomentDate(date);
+	const allNotes = getAllDailyNotes();
+	const existing = getDailyNote(momentDate, allNotes);
+	return existing instanceof TFile ? existing : null;
+}
+
 /**
  * 若核心「日记」插件已启用，则打开或创建当天的日记并应用模板；否则提示用户。
  */
