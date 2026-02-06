@@ -184,9 +184,9 @@
 }
 
 .tg-pie-body {
-	display: grid;
-	grid-template-columns: 120px 1fr;
-	gap: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
 	align-items: center;
 }
 
@@ -197,8 +197,8 @@
 }
 
 .tg-pie {
-	width: 120px;
-	height: 120px;
+	width: 140px;
+	height: 140px;
 }
 
 .tg-pie-slice {
@@ -214,36 +214,58 @@
 .tg-pie-slice-5 { fill: var(--color-blue); }
 .tg-pie-slice-6 { fill: var(--color-purple); }
 .tg-pie-slice-7 { fill: var(--color-pink); }
-.tg-pie-slice-muted { fill: var(--tg-border); }
+.tg-pie-slice-muted { fill: var(--background-modifier-border-hover, var(--tg-border)); }
 
 .tg-pie-legend {
 	display: grid;
-	gap: 6px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 8px 12px;
+	width: 100%;
 }
 
 .tg-pie-legend-row {
 	display: grid;
-	grid-template-columns: 10px 1fr auto;
+	grid-template-columns: 12px 1fr auto auto;
 	gap: 6px;
 	align-items: center;
-	font-size: 11px;
+	font-size: 12px;
 	color: var(--tg-muted);
+	padding: 6px 8px;
+	border-radius: 999px;
+	border: 1px solid var(--tg-border);
+	background: var(--background-secondary);
+	transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
 .tg-pie-legend-swatch {
-	width: 10px;
-	height: 10px;
+	width: 12px;
+	height: 12px;
 	border-radius: 2px;
 }
 
-.tg-pie-legend-label {
-	color: var(--tg-text);
-}
-
-.tg-pie-legend-value {
-	color: var(--tg-muted);
+.tg-pie-legend-label,
+.tg-pie-legend-value,
+.tg-pie-legend-percent {
+	color: inherit;
 	font-variant-numeric: tabular-nums;
 }
+
+.tg-pie-legend-row-active {
+	font-weight: 700;
+	transform: scale(1.04);
+	transform-origin: left center;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+
+.tg-pie-legend-color-0 { color: var(--color-red); }
+.tg-pie-legend-color-1 { color: var(--color-orange); }
+.tg-pie-legend-color-2 { color: var(--color-yellow); }
+.tg-pie-legend-color-3 { color: var(--color-green); }
+.tg-pie-legend-color-4 { color: var(--color-cyan); }
+.tg-pie-legend-color-5 { color: var(--color-blue); }
+.tg-pie-legend-color-6 { color: var(--color-purple); }
+.tg-pie-legend-color-7 { color: var(--color-pink); }
+.tg-pie-legend-color-muted { color: var(--tg-muted); }
 
 .tg-pie-empty {
 	margin-top: 8px;

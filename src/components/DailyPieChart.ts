@@ -92,10 +92,12 @@ export class DailyPieChart {
 		svg.setAttribute('viewBox', '0 0 120 120');
 		svg.classList.add('tg-pie');
 
+		const legendRows: HTMLElement[] = [];
 		let currentAngle = 0;
 		buckets.forEach((item, index) => {
 			const pieDuration = item.durationMs * scale;
 			const ratio = pieDuration / totalForPie;
+			const percent = (pieDuration / dayMs) * 100;
 			const angle = ratio * 360;
 			const startAngle = currentAngle;
 			const endAngle = currentAngle + angle;
@@ -104,11 +106,16 @@ export class DailyPieChart {
 			const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
 			path.setAttribute('d', describeArc(60, 60, 48, startAngle, endAngle));
 			path.setAttribute('class', `tg-pie-slice ${COLOR_CLASSES[index % COLOR_CLASSES.length]}`);
+			path.setAttribute('data-legend-index', String(index));
+			const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+			title.textContent = `${item.name} · ${formatDuration(item.durationMs)} · ${formatPercent(percent)}`;
+			path.appendChild(title);
 			svg.appendChild(path);
 		});
 
 		if (remainderMs > 0) {
 			const ratio = remainderMs / totalForPie;
+			const percent = (remainderMs / dayMs) * 100;
 			const angle = ratio * 360;
 			const startAngle = currentAngle;
 			const endAngle = currentAngle + angle;
@@ -117,26 +124,53 @@ export class DailyPieChart {
 			const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
 			path.setAttribute('d', describeArc(60, 60, 48, startAngle, endAngle));
 			path.setAttribute('class', 'tg-pie-slice tg-pie-slice-muted');
+			path.setAttribute('data-legend-index', String(buckets.length));
+			const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+			title.textContent = `未记录 · ${formatDuration(remainderMs)} · ${formatPercent(percent)}`;
+			path.appendChild(title);
 			svg.appendChild(path);
 		}
 
 		this.chartWrap.appendChild(svg);
 
 		buckets.forEach((item, index) => {
-			const row = this.legend.createDiv('tg-pie-legend-row');
+			const row = this.legend.createDiv(`tg-pie-legend-row tg-pie-legend-color-${index % COLOR_CLASSES.length}`);
+			row.setAttr('data-legend-index', String(index));
 			const swatch = row.createDiv(`tg-pie-legend-swatch ${COLOR_CLASSES[index % COLOR_CLASSES.length]}`);
 			swatch.setAttr('aria-hidden', 'true');
 			row.createDiv('tg-pie-legend-label').textContent = item.name;
 			row.createDiv('tg-pie-legend-value').textContent = formatDuration(item.durationMs);
+			row.createDiv('tg-pie-legend-percent').textContent = formatPercent((item.durationMs / dayMs) * 100);
+			legendRows.push(row);
 		});
 
 		if (remainderMs > 0) {
-			const row = this.legend.createDiv('tg-pie-legend-row');
+			const row = this.legend.createDiv('tg-pie-legend-row tg-pie-legend-color-muted');
+			row.setAttr('data-legend-index', String(buckets.length));
 			const swatch = row.createDiv('tg-pie-legend-swatch tg-pie-slice-muted');
 			swatch.setAttr('aria-hidden', 'true');
 			row.createDiv('tg-pie-legend-label').textContent = '未记录';
 			row.createDiv('tg-pie-legend-value').textContent = formatDuration(remainderMs);
+			row.createDiv('tg-pie-legend-percent').textContent = formatPercent((remainderMs / dayMs) * 100);
+			legendRows.push(row);
 		}
+
+		const setActive = (index: number | null) => {
+			legendRows.forEach((row, rowIndex) => {
+				if (index === rowIndex) {
+					row.classList.add('tg-pie-legend-row-active');
+				} else {
+					row.classList.remove('tg-pie-legend-row-active');
+				}
+			});
+		};
+
+		const paths = svg.querySelectorAll('path[data-legend-index]');
+		paths.forEach((path) => {
+			const index = Number(path.getAttribute('data-legend-index'));
+			path.addEventListener('mouseenter', () => setActive(index));
+			path.addEventListener('mouseleave', () => setActive(null));
+		});
 	}
 }
 
@@ -166,4 +200,8 @@ function formatDuration(ms: number): string {
 		return `${hours}h ${minutes}m`;
 	}
 	return `${minutes}m`;
+}
+
+function formatPercent(value: number): string {
+	return `${Math.max(0, value).toFixed(0)}%`;
 }

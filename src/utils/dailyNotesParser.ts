@@ -59,34 +59,38 @@ function getEntryDurationMs(entry: SimpleTimeTrackerEntry, now: Date): number {
 function collectEntries(
 	entries: SimpleTimeTrackerEntry[] | undefined,
 	now: Date,
-	output: DurationBucket[]
+	order: string[],
+	buckets: Map<string, number>
 ): void {
 	if (!entries) {
 		return;
 	}
+
+	const addBucket = (name: string, durationMs: number) => {
+		if (durationMs <= 0) {
+			return;
+		}
+		if (!buckets.has(name)) {
+			order.push(name);
+			buckets.set(name, durationMs);
+		} else {
+			buckets.set(name, (buckets.get(name) ?? 0) + durationMs);
+		}
+	};
+
 	for (const entry of entries) {
+		const name = entry.name || '未命名';
 		if (entry.subEntries && entry.subEntries.length > 0) {
 			let total = 0;
 			for (const subEntry of entry.subEntries) {
 				total += getEntryDurationMs(subEntry, now);
 			}
-			if (total > 0) {
-				output.push({
-					name: entry.name || '未命名',
-					durationMs: total,
-				});
-			}
+			addBucket(name, total);
 			continue;
 		}
 
 		const durationMs = getEntryDurationMs(entry, now);
-		if (durationMs <= 0) {
-			continue;
-		}
-		output.push({
-			name: entry.name || '未命名',
-			durationMs,
-		});
+		addBucket(name, durationMs);
 	}
 }
 
@@ -94,16 +98,11 @@ export function aggregateDurations(data: SimpleTimeTrackerData | null, now: Date
 	if (!data || !data.entries || data.entries.length === 0) {
 		return [];
 	}
-	const flat: DurationBucket[] = [];
-	collectEntries(data.entries, now, flat);
-
+	const order: string[] = [];
 	const buckets = new Map<string, number>();
-	for (const item of flat) {
-		const current = buckets.get(item.name) ?? 0;
-		buckets.set(item.name, current + item.durationMs);
-	}
+	collectEntries(data.entries, now, order, buckets);
 
-	return Array.from(buckets.entries())
-		.map(([name, durationMs]) => ({ name, durationMs }))
-		.sort((a, b) => b.durationMs - a.durationMs);
+	return order
+		.map((name) => ({ name, durationMs: buckets.get(name) ?? 0 }))
+		.filter((item) => item.durationMs > 0);
 }
