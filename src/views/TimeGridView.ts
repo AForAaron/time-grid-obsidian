@@ -2,6 +2,7 @@ import { ItemView, WorkspaceLeaf } from 'obsidian';
 import { MonthHeatmap } from '../components/MonthHeatmap';
 import { DayGrid } from '../components/DayGrid';
 import { HourGrid } from '../components/HourGrid';
+import { DailyPieChart } from '../components/DailyPieChart';
 
 export const TIME_GRID_VIEW = 'time-grid-view';
 
@@ -9,6 +10,7 @@ export class TimeGridView extends ItemView {
 	private monthHeatmap: MonthHeatmap;
 	private dayGrid: DayGrid;
 	private hourGrid: HourGrid;
+	private dailyPieChart: DailyPieChart;
 	private updateInterval: number;
 
 	getViewType(): string {
@@ -35,6 +37,7 @@ export class TimeGridView extends ItemView {
 		this.monthHeatmap = new MonthHeatmap(wrapper);
 		this.dayGrid = new DayGrid(wrapper);
 		this.hourGrid = new HourGrid(wrapper);
+		this.dailyPieChart = new DailyPieChart(wrapper, this.app);
 
 		// 每秒更新一次（节流到 1 秒，降低内存占用）
 		this.updateInterval = window.setInterval(() => {
@@ -56,5 +59,6 @@ export class TimeGridView extends ItemView {
 		this.monthHeatmap.update(now);
 		this.dayGrid.update(now);
 		this.hourGrid.update(now);
+		this.dailyPieChart.update(now);
 	}
 }

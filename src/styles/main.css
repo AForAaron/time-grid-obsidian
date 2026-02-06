@@ -177,3 +177,77 @@
 	background: var(--tg-panel-bg);
 	border: 1px solid var(--tg-border);
 }
+
+/* 扇形图 */
+.tg-pie-module {
+	padding-bottom: 12px;
+}
+
+.tg-pie-body {
+	display: grid;
+	grid-template-columns: 120px 1fr;
+	gap: 12px;
+	align-items: center;
+}
+
+.tg-pie-chart {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.tg-pie {
+	width: 120px;
+	height: 120px;
+}
+
+.tg-pie-slice {
+	stroke: var(--tg-panel-bg);
+	stroke-width: 1;
+}
+
+.tg-pie-slice-0 { fill: var(--color-red); }
+.tg-pie-slice-1 { fill: var(--color-orange); }
+.tg-pie-slice-2 { fill: var(--color-yellow); }
+.tg-pie-slice-3 { fill: var(--color-green); }
+.tg-pie-slice-4 { fill: var(--color-cyan); }
+.tg-pie-slice-5 { fill: var(--color-blue); }
+.tg-pie-slice-6 { fill: var(--color-purple); }
+.tg-pie-slice-7 { fill: var(--color-pink); }
+.tg-pie-slice-muted { fill: var(--tg-border); }
+
+.tg-pie-legend {
+	display: grid;
+	gap: 6px;
+}
+
+.tg-pie-legend-row {
+	display: grid;
+	grid-template-columns: 10px 1fr auto;
+	gap: 6px;
+	align-items: center;
+	font-size: 11px;
+	color: var(--tg-muted);
+}
+
+.tg-pie-legend-swatch {
+	width: 10px;
+	height: 10px;
+	border-radius: 2px;
+}
+
+.tg-pie-legend-label {
+	color: var(--tg-text);
+}
+
+.tg-pie-legend-value {
+	color: var(--tg-muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.tg-pie-empty {
+	margin-top: 8px;
+	font-size: 12px;
+	color: var(--tg-muted);
+	text-align: center;
+}
