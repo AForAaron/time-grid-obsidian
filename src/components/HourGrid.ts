@@ -6,14 +6,14 @@ export class HourGrid {
 	private timeDisplay: HTMLElement;
 
 	constructor(parent: HTMLElement) {
-		this.container = parent.createDiv('time-grid-module hour-grid');
+		this.container = parent.createDiv('tg-module tg-hour-grid');
 		
-		const header = this.container.createDiv('module-header');
-		header.createSpan({ text: '当下 (60m)', cls: 'module-title' });
-		this.timeDisplay = header.createSpan({ cls: 'time-display' });
+		const header = this.container.createDiv('tg-module-header');
+		header.createSpan({ text: '当下 (60m)', cls: 'tg-module-title' });
+		this.timeDisplay = header.createSpan({ cls: 'tg-time-display' });
 		appendIcon(header, 'hour');
 
-		this.grid = this.container.createDiv('hour-grid-container');
+		this.grid = this.container.createDiv('tg-hour-grid-container');
 	}
 
 	update(now: Date): void {
@@ -27,7 +27,7 @@ export class HourGrid {
 		const currentMinute = now.getMinutes();
 
 		for (let minute = 0; minute < 60; minute++) {
-			const cell = this.grid.createDiv('minute-cell');
+			const cell = this.grid.createDiv('tg-minute-cell');
 
 			if (minute < currentMinute) {
 				cell.addClass('past');

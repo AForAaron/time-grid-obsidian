@@ -1,4 +1,5 @@
 import { ItemView, WorkspaceLeaf } from 'obsidian';
+import { TimeHeatmap } from '../components/TimeHeatmap';
 import { MonthHeatmap } from '../components/MonthHeatmap';
 import { DayGrid } from '../components/DayGrid';
 import { HourGrid } from '../components/HourGrid';
@@ -8,6 +9,7 @@ import { openOrCreateDailyNoteForDate, openOrCreateTodayDailyNote } from '../uti
 export const TIME_GRID_VIEW = 'time-grid-view';
 
 export class TimeGridView extends ItemView {
+	private timeHeatmap: TimeHeatmap;
 	private monthHeatmap: MonthHeatmap;
 	private dayGrid: DayGrid;
 	private hourGrid: HourGrid;
@@ -29,12 +31,16 @@ export class TimeGridView extends ItemView {
 	async onOpen(): Promise<void> {
 		const container = this.contentEl;
 		container.empty();
-		container.addClass('time-grid-container');
+		container.addClass('tg-container');
 
 		// 创建垂直布局容器
-		const wrapper = container.createDiv('time-grid-wrapper');
+		const wrapper = container.createDiv('tg-wrapper');
 
 		// 初始化三个组件
+		this.timeHeatmap = new TimeHeatmap(wrapper, this.app, {
+			onTitleClick: () => void openOrCreateTodayDailyNote(this.app),
+			onDateClick: (date) => void openOrCreateDailyNoteForDate(this.app, date, true),
+		});
 		this.monthHeatmap = new MonthHeatmap(wrapper, {
 			onTitleClick: () => void openOrCreateTodayDailyNote(this.app),
 			onDateClick: (date) => void openOrCreateDailyNoteForDate(this.app, date, true),
@@ -60,6 +66,7 @@ export class TimeGridView extends ItemView {
 
 	private updateAll(): void {
 		const now = new Date();
+		this.timeHeatmap.update(now);
 		this.monthHeatmap.update(now);
 		this.dayGrid.update(now);
 		this.hourGrid.update(now);

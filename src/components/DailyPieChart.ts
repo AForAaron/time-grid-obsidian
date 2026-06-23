@@ -25,10 +25,10 @@ export class DailyPieChart {
 
 	constructor(parent: HTMLElement, app: App) {
 		this.app = app;
-		this.container = parent.createDiv('time-grid-module tg-pie-module');
+		this.container = parent.createDiv('tg-module tg-pie-module');
 
-		const header = this.container.createDiv('module-header');
-		header.createSpan({ text: '今日计时分布', cls: 'module-title' });
+		const header = this.container.createDiv('tg-module-header');
+		header.createSpan({ text: '今日计时分布', cls: 'tg-module-title' });
 		appendIcon(header, 'pie');
 
 		const body = this.container.createDiv('tg-pie-body');
