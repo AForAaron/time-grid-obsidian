@@ -4,8 +4,6 @@ import { aggregateDurations, extractSimpleTimeTracker, getDailyNoteFilename } fr
 import { getDailyNoteFileForDate } from '../utils/dailyNotes';
 import {
 	HEATMAP_RANGES,
-	HeatmapMode,
-	HeatmapRangeKey,
 	WritingStatsTracker,
 } from '../utils/writingStats';
 
@@ -23,19 +21,13 @@ type HeatmapDay = {
 	isFuture: boolean;
 };
 
-const MODE_LABELS: Record<HeatmapMode, string> = {
-	words: '字数',
-	time: '时间',
-};
-
-const RANGE_ORDER: HeatmapRangeKey[] = ['3m', '6m', '1y'];
-const MODE_ORDER: HeatmapMode[] = ['words', 'time'];
+const FIXED_RANGE_KEY = '6m';
+const FIXED_RANGE = HEATMAP_RANGES[FIXED_RANGE_KEY];
 
 export class TimeHeatmap {
 	private app: App;
 	private writingStats: WritingStatsTracker;
 	private container: HTMLElement;
-	private controls: HTMLElement;
 	private content: HTMLElement;
 	private grid: HTMLElement;
 	private monthLabels: HTMLElement;
@@ -65,8 +57,6 @@ export class TimeHeatmap {
 			header.addEventListener('click', this.onTitleClick);
 		}
 
-		this.controls = this.container.createDiv('tg-heatmap-controls');
-
 		const body = this.container.createDiv('tg-heatmap-body');
 		const weekLabels = body.createDiv('tg-heatmap-weekdays');
 		['一', '', '三', '', '五', '', '日'].forEach(label => {
@@ -91,12 +81,10 @@ export class TimeHeatmap {
 
 		this.tooltip = this.container.createDiv('tg-heatmap-tooltip');
 		this.tooltip.hide();
-		this.renderControls();
 	}
 
 	update(now: Date): void {
-		const preferences = this.writingStats.getPreferences();
-		const renderKey = `${getDailyNoteFilename(now)}-${now.getHours()}-${now.getMinutes()}-${preferences.mode}-${preferences.range}-${this.writingStats.getRevision()}`;
+		const renderKey = `${getDailyNoteFilename(now)}-${now.getHours()}-${now.getMinutes()}-${this.writingStats.getRevision()}`;
 		if (renderKey === this.lastRenderedKey || this.refreshInFlight) {
 			return;
 		}
@@ -108,72 +96,24 @@ export class TimeHeatmap {
 		});
 	}
 
-	private renderControls(): void {
-		this.controls.empty();
-		this.createSegmentedControl(
-			MODE_ORDER,
-			this.writingStats.getPreferences().mode,
-			(value) => MODE_LABELS[value],
-			(mode) => this.updatePreferences({ mode }),
-			'tg-mode-toggle'
-		);
-		this.createSegmentedControl(
-			RANGE_ORDER,
-			this.writingStats.getPreferences().range,
-			(value) => HEATMAP_RANGES[value].label.replace('近', ''),
-			(range) => this.updatePreferences({ range }),
-			'tg-range-toggle'
-		);
-	}
-
-	private createSegmentedControl<T extends string>(
-		values: T[],
-		activeValue: T,
-		getLabel: (value: T) => string,
-		onSelect: (value: T) => void,
-		className: string
-	): void {
-		const group = this.controls.createDiv(`tg-segmented ${className}`);
-		group.setAttr('role', 'group');
-		values.forEach((value) => {
-			const button = group.createEl('button', { text: getLabel(value), cls: 'tg-segmented-button' });
-			button.type = 'button';
-			if (value === activeValue) {
-				button.addClass('active');
-			}
-			button.addEventListener('click', (event) => {
-				event.stopPropagation();
-				onSelect(value);
-			});
-		});
-	}
-
-	private updatePreferences(preferences: Partial<{ mode: HeatmapMode; range: HeatmapRangeKey }>): void {
-		this.lastRenderedKey = '';
-		this.lastAutoScrollKey = '';
-		void this.writingStats.setPreferences(preferences).then(() => {
-			this.renderControls();
-			this.update(new Date());
-		});
-	}
-
 	private async refresh(now: Date): Promise<void> {
-		const preferences = this.writingStats.getPreferences();
-		const range = HEATMAP_RANGES[preferences.range];
-		const days = getVisibleDates(now, range.weeks);
+		const days = getVisibleDates(now, FIXED_RANGE.weeks);
 		const rawValues: Array<{ date: Date; dateKey: string; value: number; isToday: boolean; isFuture: boolean }> = [];
-		let total = 0;
-		let activeDays = 0;
+		let totalDuration = 0;
+		let totalWords = 0;
+		let timeActiveDays = 0;
 		let maxValue = 0;
 
 		for (const date of days) {
 			const dateKey = getDailyNoteFilename(date);
-			const value = await this.getValueForDate(date, now, preferences.mode);
+			const value = await this.getDurationForDate(date, now);
+			const wordCount = this.writingStats.getWordCountForDate(dateKey);
 			const isToday = isSameDate(date, now);
 			const isFuture = startOfDay(date).getTime() > startOfDay(now).getTime();
+			totalWords += wordCount;
 			if (value > 0) {
-				activeDays++;
-				total += value;
+				timeActiveDays++;
+				totalDuration += value;
 				maxValue = Math.max(maxValue, value);
 			}
 			rawValues.push({ date, dateKey, value, isToday, isFuture });
@@ -184,14 +124,7 @@ export class TimeHeatmap {
 			level: getLevel(item.value, maxValue),
 		}));
 
-		this.render(now, heatmapDays, activeDays, total, preferences.mode, preferences.range);
-	}
-
-	private async getValueForDate(date: Date, now: Date, mode: HeatmapMode): Promise<number> {
-		if (mode === 'words') {
-			return this.writingStats.getWordCountForDate(getDailyNoteFilename(date));
-		}
-		return this.getDurationForDate(date, now);
+		this.render(now, heatmapDays, timeActiveDays, totalDuration, totalWords);
 	}
 
 	private async getDurationForDate(date: Date, now: Date): Promise<number> {
@@ -215,31 +148,30 @@ export class TimeHeatmap {
 	private render(
 		now: Date,
 		days: HeatmapDay[],
-		activeDays: number,
-		total: number,
-		mode: HeatmapMode,
-		rangeKey: HeatmapRangeKey
+		timeActiveDays: number,
+		totalDuration: number,
+		totalWords: number
 	): void {
-		const range = HEATMAP_RANGES[rangeKey];
 		this.monthLabels.empty();
 		this.grid.empty();
-		this.monthLabels.setAttr('style', `grid-template-columns: repeat(${range.weeks}, var(--tg-heatmap-cell-size));`);
-		this.summary.textContent = `${range.label}(${range.weeks}周) · ${activeDays}天 · ${formatTotalValue(total, mode)}`;
+		this.monthLabels.setAttr('style', `grid-template-columns: repeat(${FIXED_RANGE.weeks}, var(--tg-heatmap-cell-size));`);
+		this.summary.textContent =
+			`${FIXED_RANGE.label}(${FIXED_RANGE.weeks}周) · 计时 ${timeActiveDays}天 / ${formatDuration(totalDuration)} · 新增 ${formatWords(totalWords)}`;
 		let todayCell: HTMLElement | null = null;
 		let todayDateKey = '';
 
-		getMonthLabels(now, range.weeks).forEach(({ label, week }) => {
+		getMonthLabels(now, FIXED_RANGE.weeks).forEach(({ label, week }) => {
 			const monthEl = this.monthLabels.createDiv({ text: label, cls: 'tg-heatmap-month-label' });
 			monthEl.setAttr('style', `grid-column: ${week + 1};`);
 		});
 
-		for (let week = 0; week < range.weeks; week++) {
+		for (let week = 0; week < FIXED_RANGE.weeks; week++) {
 			const column = this.grid.createDiv('tg-heatmap-week-column');
 			for (let day = 0; day < 7; day++) {
 				const dayData = days[week * 7 + day];
 				const cell = column.createDiv(`tg-heatmap-cell level-${dayData.level}`);
-				cell.setAttr('aria-label', `${dayData.dateKey} ${formatTooltipValue(dayData.value, mode)}`);
-				cell.addEventListener('mouseenter', (event) => this.showTooltip(event, dayData, mode));
+				cell.setAttr('aria-label', `${dayData.dateKey} ${formatTooltipValue(dayData.value)}`);
+				cell.addEventListener('mouseenter', (event) => this.showTooltip(event, dayData));
 				cell.addEventListener('mousemove', (event) => this.moveTooltip(event));
 				cell.addEventListener('mouseleave', () => this.hideTooltip());
 
@@ -258,7 +190,7 @@ export class TimeHeatmap {
 			}
 		}
 
-		this.scrollToToday(todayCell, `${rangeKey}-${todayDateKey}`);
+		this.scrollToToday(todayCell, `${FIXED_RANGE_KEY}-${todayDateKey}`);
 	}
 
 	private scrollToToday(todayCell: HTMLElement | null, todayKey: string): void {
@@ -282,10 +214,10 @@ export class TimeHeatmap {
 		});
 	}
 
-	private showTooltip(event: MouseEvent, dayData: HeatmapDay, mode: HeatmapMode): void {
+	private showTooltip(event: MouseEvent, dayData: HeatmapDay): void {
 		this.tooltip.empty();
 		this.tooltip.createEl('strong', { text: dayData.dateKey });
-		this.tooltip.createDiv({ text: formatTooltipValue(dayData.value, mode) });
+		this.tooltip.createDiv({ text: formatTooltipValue(dayData.value) });
 		this.tooltip.show();
 		this.moveTooltip(event);
 	}
@@ -355,17 +287,11 @@ function getLevel(value: number, maxValue: number): number {
 	return Math.max(1, Math.min(4, Math.ceil((value / maxValue) * 4)));
 }
 
-function formatTotalValue(value: number, mode: HeatmapMode): string {
-	if (mode === 'words') {
-		return `${Math.round(value).toLocaleString()}字`;
-	}
-	return formatDuration(value);
+function formatWords(value: number): string {
+	return `${Math.round(value).toLocaleString()}字`;
 }
 
-function formatTooltipValue(value: number, mode: HeatmapMode): string {
-	if (mode === 'words') {
-		return `新增 ${Math.round(value).toLocaleString()}字`;
-	}
+function formatTooltipValue(value: number): string {
 	return `记录 ${formatDuration(value)}`;
 }
 

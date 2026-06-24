@@ -1,40 +1,27 @@
 import { Plugin, TAbstractFile, TFile } from 'obsidian';
 import { getDailyNoteFilename } from './dailyNotesParser';
 
-export type HeatmapMode = 'words' | 'time';
-export type HeatmapRangeKey = '3m' | '6m' | '1y';
-
-export type HeatmapPreferences = {
-	mode: HeatmapMode;
-	range: HeatmapRangeKey;
-};
-
 export type WritingStatsData = {
 	fileBaselines: Record<string, number>;
 	dailyWordIncrements: Record<string, number>;
 };
 
 export type TimeGridPluginData = {
-	heatmapPreferences: HeatmapPreferences;
 	writingStats: WritingStatsData;
 };
 
 export const DEFAULT_TIME_GRID_DATA: TimeGridPluginData = {
-	heatmapPreferences: {
-		mode: 'words',
-		range: '6m',
-	},
 	writingStats: {
 		fileBaselines: {},
 		dailyWordIncrements: {},
 	},
 };
 
-export const HEATMAP_RANGES: Record<HeatmapRangeKey, { label: string; weeks: number }> = {
+export const HEATMAP_RANGES = {
 	'3m': { label: '近3个月', weeks: 13 },
 	'6m': { label: '近6个月', weeks: 26 },
 	'1y': { label: '近1年', weeks: 52 },
-};
+} as const;
 
 export class WritingStatsTracker {
 	private plugin: Plugin;
@@ -83,18 +70,6 @@ export class WritingStatsTracker {
 				}
 			})
 		);
-	}
-
-	getPreferences(): HeatmapPreferences {
-		return this.data.heatmapPreferences;
-	}
-
-	async setPreferences(preferences: Partial<HeatmapPreferences>): Promise<void> {
-		this.data.heatmapPreferences = {
-			...this.data.heatmapPreferences,
-			...preferences,
-		};
-		await this.save();
 	}
 
 	getWordCountForDate(dateKey: string): number {
@@ -176,10 +151,6 @@ export class WritingStatsTracker {
 export function normalizeTimeGridData(raw: unknown): TimeGridPluginData {
 	const input = (raw ?? {}) as Partial<TimeGridPluginData>;
 	return {
-		heatmapPreferences: {
-			...DEFAULT_TIME_GRID_DATA.heatmapPreferences,
-			...(input.heatmapPreferences ?? {}),
-		},
 		writingStats: {
 			fileBaselines: {
 				...(input.writingStats?.fileBaselines ?? {}),

@@ -82,7 +82,6 @@
 .tg-time-heatmap {
 	--tg-heatmap-cell-size: 10px;
 	--tg-heatmap-gap: 4px;
-	--tg-heatmap-active-bg: color-mix(in srgb, var(--background-modifier-hover) 76%, var(--background-primary));
 	--tg-heatmap-empty: color-mix(in srgb, var(--background-modifier-border) 52%, var(--background-primary));
 	--tg-heatmap-level-1: color-mix(in srgb, var(--tg-accent) 30%, var(--background-primary));
 	--tg-heatmap-level-2: color-mix(in srgb, var(--tg-accent) 45%, var(--background-primary));
@@ -114,73 +113,7 @@
 	line-height: 1.35;
 	color: var(--tg-muted);
 	font-variant-numeric: tabular-nums;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-.tg-heatmap-controls {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	margin: 0 0 14px;
-	flex-wrap: nowrap;
-}
-
-.tg-segmented {
-	display: inline-grid;
-	grid-auto-flow: column;
-	gap: 3px;
-	padding: 3px;
-	border-radius: 10px;
-	background: color-mix(in srgb, var(--background-secondary) 78%, var(--background-primary));
-	border: 1px solid color-mix(in srgb, var(--tg-border) 82%, transparent);
-	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
-}
-
-.tg-mode-toggle {
-	grid-template-columns: repeat(2, max-content);
-}
-
-.tg-range-toggle {
-	grid-template-columns: repeat(3, max-content);
-	margin-left: auto;
-}
-
-.tg-segmented-button {
-	border: 0;
-	border-radius: 7px;
-	padding: 5px 12px;
-	min-height: 30px;
-	font-size: 13px;
-	font-weight: 600;
-	line-height: 1;
-	color: var(--tg-muted);
-	background: transparent;
-	cursor: pointer;
-	font-family: inherit;
-	white-space: nowrap;
-	transition: background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
-}
-
-.tg-mode-toggle .tg-segmented-button {
-	min-width: 56px;
-}
-
-.tg-range-toggle .tg-segmented-button {
-	min-width: 58px;
-}
-
-.tg-segmented-button:hover {
-	color: var(--tg-text);
-	background: var(--background-modifier-hover);
-}
-
-.tg-segmented-button.active {
-	color: var(--tg-text);
-	background: var(--tg-heatmap-active-bg);
-	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tg-border) 70%, transparent);
+	white-space: normal;
 }
 
 .tg-heatmap-body {
@@ -365,32 +298,6 @@
 		font-size: 12px;
 	}
 
-	.tg-heatmap-controls {
-		gap: 8px;
-		overflow: hidden;
-	}
-
-	.tg-segmented {
-		gap: 2px;
-		padding: 3px;
-		border-radius: 10px;
-	}
-
-	.tg-segmented-button {
-		padding: 5px 8px;
-		min-height: 28px;
-		font-size: 11px;
-	}
-
-	.tg-mode-toggle .tg-segmented-button,
-	.tg-range-toggle .tg-segmented-button {
-		min-width: 0;
-	}
-
-	.tg-segmented-button {
-		white-space: nowrap;
-	}
-
 	.tg-heatmap-body {
 		--tg-heatmap-cell-size: 9.5px;
 		--tg-heatmap-gap: 3px;
@@ -409,22 +316,6 @@
 @container tg-heatmap (max-width: 320px) {
 	.tg-time-heatmap {
 		padding: 15px 10px 13px;
-	}
-
-	.tg-heatmap-controls {
-		gap: 6px;
-		margin-bottom: 12px;
-	}
-
-	.tg-segmented {
-		gap: 2px;
-		padding: 3px;
-	}
-
-	.tg-segmented-button {
-		padding: 4px 4px;
-		min-height: 26px;
-		font-size: 10px;
 	}
 
 	.tg-time-heatmap .tg-module-title {
