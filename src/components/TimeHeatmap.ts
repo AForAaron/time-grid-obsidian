@@ -69,8 +69,11 @@ export class TimeHeatmap {
 
 		const body = this.container.createDiv('tg-heatmap-body');
 		const weekLabels = body.createDiv('tg-heatmap-weekdays');
-		['一', '二', '三', '四', '五', '六', '日'].forEach(label => {
-			weekLabels.createDiv({ text: label, cls: 'tg-heatmap-weekday' });
+		['一', '', '三', '', '五', '', '日'].forEach(label => {
+			const weekday = weekLabels.createDiv({ text: label, cls: 'tg-heatmap-weekday' });
+			if (!label) {
+				weekday.addClass('is-empty');
+			}
 		});
 
 		this.content = body.createDiv('tg-heatmap-content');
@@ -111,13 +114,15 @@ export class TimeHeatmap {
 			MODE_ORDER,
 			this.writingStats.getPreferences().mode,
 			(value) => MODE_LABELS[value],
-			(mode) => this.updatePreferences({ mode })
+			(mode) => this.updatePreferences({ mode }),
+			'tg-mode-toggle'
 		);
 		this.createSegmentedControl(
 			RANGE_ORDER,
 			this.writingStats.getPreferences().range,
 			(value) => HEATMAP_RANGES[value].label.replace('近', ''),
-			(range) => this.updatePreferences({ range })
+			(range) => this.updatePreferences({ range }),
+			'tg-range-toggle'
 		);
 	}
 
@@ -125,9 +130,11 @@ export class TimeHeatmap {
 		values: T[],
 		activeValue: T,
 		getLabel: (value: T) => string,
-		onSelect: (value: T) => void
+		onSelect: (value: T) => void,
+		className: string
 	): void {
-		const group = this.controls.createDiv('tg-segmented');
+		const group = this.controls.createDiv(`tg-segmented ${className}`);
+		group.setAttr('role', 'group');
 		values.forEach((value) => {
 			const button = group.createEl('button', { text: getLabel(value), cls: 'tg-segmented-button' });
 			button.type = 'button';
@@ -216,7 +223,7 @@ export class TimeHeatmap {
 		const range = HEATMAP_RANGES[rangeKey];
 		this.monthLabels.empty();
 		this.grid.empty();
-		this.monthLabels.setAttr('style', `grid-template-columns: repeat(${range.weeks}, 10px);`);
+		this.monthLabels.setAttr('style', `grid-template-columns: repeat(${range.weeks}, var(--tg-heatmap-cell-size));`);
 		this.summary.textContent = `${range.label}(${range.weeks}周) · ${activeDays}天 · ${formatTotalValue(total, mode)}`;
 		let todayCell: HTMLElement | null = null;
 		let todayDateKey = '';

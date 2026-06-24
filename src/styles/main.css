@@ -79,42 +79,97 @@
 }
 
 /* 时间热力图 */
+.tg-time-heatmap {
+	--tg-heatmap-cell-size: 10px;
+	--tg-heatmap-gap: 4px;
+	--tg-heatmap-active-bg: color-mix(in srgb, var(--background-modifier-hover) 76%, var(--background-primary));
+	--tg-heatmap-empty: color-mix(in srgb, var(--background-modifier-border) 52%, var(--background-primary));
+	--tg-heatmap-level-1: color-mix(in srgb, var(--tg-accent) 30%, var(--background-primary));
+	--tg-heatmap-level-2: color-mix(in srgb, var(--tg-accent) 45%, var(--background-primary));
+	--tg-heatmap-level-3: color-mix(in srgb, var(--tg-accent) 63%, var(--background-primary));
+	--tg-heatmap-level-4: color-mix(in srgb, var(--tg-accent) 86%, white);
+
+	container: tg-heatmap / inline-size;
+	padding: 18px 18px 15px;
+}
+
+.tg-time-heatmap .tg-module-header {
+	margin-bottom: 14px;
+}
+
+.tg-time-heatmap .tg-module-title {
+	font-size: 19px;
+	line-height: 1.25;
+	font-weight: 700;
+	letter-spacing: 0;
+}
+
+.tg-time-heatmap .tg-icon svg {
+	width: 18px;
+	height: 18px;
+}
+
 .tg-heatmap-summary {
-	font-size: 11px;
+	font-size: 13px;
+	line-height: 1.35;
 	color: var(--tg-muted);
 	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .tg-heatmap-controls {
 	display: flex;
 	align-items: center;
-	gap: 8px;
-	margin: -4px 0 12px;
-	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: 12px;
+	margin: 0 0 14px;
+	flex-wrap: nowrap;
 }
 
 .tg-segmented {
 	display: inline-grid;
 	grid-auto-flow: column;
-	gap: 2px;
-	padding: 2px;
-	border-radius: 7px;
-	background: var(--background-secondary);
-	border: 1px solid var(--tg-border);
+	gap: 3px;
+	padding: 3px;
+	border-radius: 10px;
+	background: color-mix(in srgb, var(--background-secondary) 78%, var(--background-primary));
+	border: 1px solid color-mix(in srgb, var(--tg-border) 82%, transparent);
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.tg-mode-toggle {
+	grid-template-columns: repeat(2, max-content);
+}
+
+.tg-range-toggle {
+	grid-template-columns: repeat(3, max-content);
+	margin-left: auto;
 }
 
 .tg-segmented-button {
 	border: 0;
-	border-radius: 5px;
-	padding: 3px 8px;
-	min-height: 22px;
-	font-size: 11px;
+	border-radius: 7px;
+	padding: 5px 12px;
+	min-height: 30px;
+	font-size: 13px;
+	font-weight: 600;
 	line-height: 1;
 	color: var(--tg-muted);
 	background: transparent;
 	cursor: pointer;
-	font: inherit;
+	font-family: inherit;
 	white-space: nowrap;
+	transition: background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.tg-mode-toggle .tg-segmented-button {
+	min-width: 56px;
+}
+
+.tg-range-toggle .tg-segmented-button {
+	min-width: 58px;
 }
 
 .tg-segmented-button:hover {
@@ -123,14 +178,17 @@
 }
 
 .tg-segmented-button.active {
-	color: var(--text-on-accent);
-	background: var(--tg-accent);
+	color: var(--tg-text);
+	background: var(--tg-heatmap-active-bg);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tg-border) 70%, transparent);
 }
 
 .tg-heatmap-body {
+	--tg-heatmap-row-height: var(--tg-heatmap-cell-size);
+
 	display: flex;
 	align-items: flex-end;
-	gap: 8px;
+	gap: 12px;
 	max-width: 100%;
 	overflow: hidden;
 }
@@ -138,81 +196,86 @@
 .tg-heatmap-weekdays {
 	display: flex;
 	flex-direction: column;
-	gap: 3px;
+	gap: var(--tg-heatmap-gap);
 	flex: 0 0 auto;
-	padding-top: 17px;
+	padding-top: 20px;
 }
 
 .tg-heatmap-weekday {
-	height: 10px;
-	line-height: 10px;
-	font-size: 9px;
-	color: var(--tg-muted);
-	text-align: center;
+	width: 18px;
+	height: var(--tg-heatmap-row-height);
+	line-height: var(--tg-heatmap-row-height);
+	font-size: 10px;
+	color: var(--text-faint);
+	text-align: left;
+}
+
+.tg-heatmap-weekday.is-empty {
+	color: transparent;
+	user-select: none;
 }
 
 .tg-heatmap-content {
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
+	gap: 5px;
 	min-width: 0;
 	overflow-x: auto;
-	padding-bottom: 2px;
+	padding-bottom: 1px;
+	scrollbar-width: none;
+}
+
+.tg-heatmap-content::-webkit-scrollbar {
+	display: none;
 }
 
 .tg-heatmap-month-labels {
 	display: grid;
-	gap: 3px;
-	height: 13px;
+	gap: var(--tg-heatmap-gap);
+	height: 15px;
 	min-width: max-content;
 }
 
 .tg-heatmap-month-label {
-	font-size: 9px;
-	line-height: 12px;
-	color: var(--tg-muted);
+	font-size: 10px;
+	line-height: 14px;
+	color: var(--text-faint);
 	white-space: nowrap;
 }
 
 .tg-heatmap-week-grid {
 	display: flex;
 	flex-direction: row;
-	gap: 3px;
+	gap: var(--tg-heatmap-gap);
 	min-width: max-content;
 }
 
 .tg-heatmap-week-column {
 	display: flex;
 	flex-direction: column;
-	gap: 3px;
+	gap: var(--tg-heatmap-gap);
 }
 
 .tg-heatmap-cell {
-	--tg-heat-0: var(--background-modifier-border);
-	--tg-heat-1: color-mix(in srgb, var(--tg-accent) 25%, var(--background-primary));
-	--tg-heat-2: color-mix(in srgb, var(--tg-accent) 45%, var(--background-primary));
-	--tg-heat-3: color-mix(in srgb, var(--tg-accent) 70%, var(--background-primary));
-	--tg-heat-4: var(--tg-accent);
-
-	width: 10px;
-	height: 10px;
-	border-radius: 3px;
-	background: var(--tg-heat-0);
+	width: var(--tg-heatmap-cell-size);
+	height: var(--tg-heatmap-cell-size);
+	border-radius: 4px;
+	background: var(--tg-heatmap-empty);
 	transition: background-color 0.35s ease, transform 0.12s ease, box-shadow 0.12s ease;
 	position: relative;
 }
 
-.tg-heatmap-cell.level-1 { background: var(--tg-heat-1); }
-.tg-heatmap-cell.level-2 { background: var(--tg-heat-2); }
-.tg-heatmap-cell.level-3 { background: var(--tg-heat-3); }
-.tg-heatmap-cell.level-4 { background: var(--tg-heat-4); }
+.tg-heatmap-cell.level-1 { background: var(--tg-heatmap-level-1); }
+.tg-heatmap-cell.level-2 { background: var(--tg-heatmap-level-2); }
+.tg-heatmap-cell.level-3 { background: var(--tg-heatmap-level-3); }
+.tg-heatmap-cell.level-4 { background: var(--tg-heatmap-level-4); }
 
 .tg-heatmap-cell.future {
 	opacity: 0.45;
 }
 
 .tg-heatmap-cell.today {
-	box-shadow: inset 0 0 0 1px var(--text-normal), 0 0 0 1px var(--tg-panel-bg);
+	box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--text-normal) 82%, var(--tg-accent)), 0 0 0 3px var(--tg-panel-bg);
 }
 
 .tg-heatmap-cell.tg-clickable {
@@ -228,11 +291,11 @@
 	position: fixed;
 	z-index: 1000;
 	pointer-events: none;
-	padding: 6px 8px;
-	border-radius: 6px;
+	padding: 7px 9px;
+	border-radius: 7px;
 	background: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
-	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
 	color: var(--text-normal);
 	font-size: 11px;
 	line-height: 1.4;
@@ -250,29 +313,30 @@
 	display: flex;
 	align-items: center;
 	justify-content: flex-end;
-	gap: 6px;
-	margin-top: 10px;
+	gap: 8px;
+	margin-top: 13px;
 }
 
 .tg-heatmap-legend-label {
-	font-size: 10px;
-	color: var(--tg-muted);
+	font-size: 11px;
+	line-height: 1;
+	color: var(--text-faint);
 }
 
 .tg-heatmap-legend-bar {
 	display: grid;
-	grid-template-columns: repeat(5, 14px);
-	gap: 2px;
-	padding: 2px;
+	grid-template-columns: repeat(5, 20px);
+	gap: 3px;
+	padding: 3px;
 	border-radius: 999px;
-	background: var(--background-modifier-border);
+	background: color-mix(in srgb, var(--background-secondary) 76%, var(--background-primary));
 }
 
 .tg-heatmap-legend-segment {
 	display: block;
-	width: 14px;
-	height: 10px;
-	background: var(--background-primary);
+	width: 20px;
+	height: 9px;
+	background: var(--tg-heatmap-empty);
 }
 
 .tg-heatmap-legend-segment:first-child {
@@ -283,10 +347,126 @@
 	border-radius: 0 999px 999px 0;
 }
 
-.tg-heatmap-legend-segment.level-1 { background: color-mix(in srgb, var(--tg-accent) 25%, var(--background-primary)); }
-.tg-heatmap-legend-segment.level-2 { background: color-mix(in srgb, var(--tg-accent) 45%, var(--background-primary)); }
-.tg-heatmap-legend-segment.level-3 { background: color-mix(in srgb, var(--tg-accent) 70%, var(--background-primary)); }
-.tg-heatmap-legend-segment.level-4 { background: var(--tg-accent); }
+.tg-heatmap-legend-segment.level-1 { background: var(--tg-heatmap-level-1); }
+.tg-heatmap-legend-segment.level-2 { background: var(--tg-heatmap-level-2); }
+.tg-heatmap-legend-segment.level-3 { background: var(--tg-heatmap-level-3); }
+.tg-heatmap-legend-segment.level-4 { background: var(--tg-heatmap-level-4); }
+
+@container tg-heatmap (max-width: 380px) {
+	.tg-time-heatmap {
+		padding: 16px 14px 14px;
+	}
+
+	.tg-time-heatmap .tg-module-title {
+		font-size: 18px;
+	}
+
+	.tg-heatmap-summary {
+		font-size: 12px;
+	}
+
+	.tg-heatmap-controls {
+		gap: 8px;
+		overflow: hidden;
+	}
+
+	.tg-segmented {
+		gap: 2px;
+		padding: 3px;
+		border-radius: 10px;
+	}
+
+	.tg-segmented-button {
+		padding: 5px 8px;
+		min-height: 28px;
+		font-size: 11px;
+	}
+
+	.tg-mode-toggle .tg-segmented-button,
+	.tg-range-toggle .tg-segmented-button {
+		min-width: 0;
+	}
+
+	.tg-segmented-button {
+		white-space: nowrap;
+	}
+
+	.tg-heatmap-body {
+		--tg-heatmap-cell-size: 9.5px;
+		--tg-heatmap-gap: 3px;
+		gap: 8px;
+	}
+
+	.tg-heatmap-legend-bar {
+		grid-template-columns: repeat(5, 17px);
+	}
+
+	.tg-heatmap-legend-segment {
+		width: 17px;
+	}
+}
+
+@container tg-heatmap (max-width: 320px) {
+	.tg-time-heatmap {
+		padding: 15px 10px 13px;
+	}
+
+	.tg-heatmap-controls {
+		gap: 6px;
+		margin-bottom: 12px;
+	}
+
+	.tg-segmented {
+		gap: 2px;
+		padding: 3px;
+	}
+
+	.tg-segmented-button {
+		padding: 4px 4px;
+		min-height: 26px;
+		font-size: 10px;
+	}
+
+	.tg-time-heatmap .tg-module-title {
+		font-size: 17px;
+	}
+
+	.tg-heatmap-summary {
+		font-size: 11px;
+	}
+
+	.tg-heatmap-body {
+		--tg-heatmap-cell-size: 8.5px;
+		--tg-heatmap-gap: 3px;
+		gap: 6px;
+	}
+
+	.tg-heatmap-weekday {
+		width: 14px;
+		font-size: 9px;
+	}
+
+	.tg-heatmap-legend {
+		gap: 6px;
+		margin-top: 11px;
+	}
+
+	.tg-heatmap-legend-bar {
+		grid-template-columns: repeat(5, 15px);
+		gap: 2px;
+	}
+
+	.tg-heatmap-legend-segment {
+		width: 15px;
+		height: 8px;
+	}
+}
+
+@container tg-heatmap (min-width: 520px) {
+	.tg-heatmap-body {
+		--tg-heatmap-cell-size: 11px;
+	}
+}
 
 /* 本月日历 */
 .tg-month-grid {
