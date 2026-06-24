@@ -85,6 +85,48 @@
 	font-variant-numeric: tabular-nums;
 }
 
+.tg-heatmap-controls {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: -4px 0 12px;
+	flex-wrap: wrap;
+}
+
+.tg-segmented {
+	display: inline-grid;
+	grid-auto-flow: column;
+	gap: 2px;
+	padding: 2px;
+	border-radius: 7px;
+	background: var(--background-secondary);
+	border: 1px solid var(--tg-border);
+}
+
+.tg-segmented-button {
+	border: 0;
+	border-radius: 5px;
+	padding: 3px 8px;
+	min-height: 22px;
+	font-size: 11px;
+	line-height: 1;
+	color: var(--tg-muted);
+	background: transparent;
+	cursor: pointer;
+	font: inherit;
+	white-space: nowrap;
+}
+
+.tg-segmented-button:hover {
+	color: var(--tg-text);
+	background: var(--background-modifier-hover);
+}
+
+.tg-segmented-button.active {
+	color: var(--text-on-accent);
+	background: var(--tg-accent);
+}
+
 .tg-heatmap-body {
 	display: flex;
 	align-items: flex-end;
@@ -208,7 +250,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: flex-end;
-	gap: 4px;
+	gap: 6px;
 	margin-top: 10px;
 }
 
@@ -217,17 +259,34 @@
 	color: var(--tg-muted);
 }
 
-.tg-heatmap-legend-swatch {
-	width: 10px;
-	height: 10px;
-	border-radius: 3px;
+.tg-heatmap-legend-bar {
+	display: grid;
+	grid-template-columns: repeat(5, 14px);
+	gap: 2px;
+	padding: 2px;
+	border-radius: 999px;
 	background: var(--background-modifier-border);
 }
 
-.tg-heatmap-legend-swatch.level-1 { background: color-mix(in srgb, var(--tg-accent) 25%, var(--background-primary)); }
-.tg-heatmap-legend-swatch.level-2 { background: color-mix(in srgb, var(--tg-accent) 45%, var(--background-primary)); }
-.tg-heatmap-legend-swatch.level-3 { background: color-mix(in srgb, var(--tg-accent) 70%, var(--background-primary)); }
-.tg-heatmap-legend-swatch.level-4 { background: var(--tg-accent); }
+.tg-heatmap-legend-segment {
+	display: block;
+	width: 14px;
+	height: 10px;
+	background: var(--background-primary);
+}
+
+.tg-heatmap-legend-segment:first-child {
+	border-radius: 999px 0 0 999px;
+}
+
+.tg-heatmap-legend-segment:last-child {
+	border-radius: 0 999px 999px 0;
+}
+
+.tg-heatmap-legend-segment.level-1 { background: color-mix(in srgb, var(--tg-accent) 25%, var(--background-primary)); }
+.tg-heatmap-legend-segment.level-2 { background: color-mix(in srgb, var(--tg-accent) 45%, var(--background-primary)); }
+.tg-heatmap-legend-segment.level-3 { background: color-mix(in srgb, var(--tg-accent) 70%, var(--background-primary)); }
+.tg-heatmap-legend-segment.level-4 { background: var(--tg-accent); }
 
 /* 本月日历 */
 .tg-month-grid {

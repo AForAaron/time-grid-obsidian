@@ -5,16 +5,23 @@ import { DayGrid } from '../components/DayGrid';
 import { HourGrid } from '../components/HourGrid';
 import { DailyPieChart } from '../components/DailyPieChart';
 import { openOrCreateDailyNoteForDate, openOrCreateTodayDailyNote } from '../utils/dailyNotes';
+import { WritingStatsTracker } from '../utils/writingStats';
 
 export const TIME_GRID_VIEW = 'time-grid-view';
 
 export class TimeGridView extends ItemView {
+	private writingStats: WritingStatsTracker;
 	private timeHeatmap: TimeHeatmap;
 	private monthHeatmap: MonthHeatmap;
 	private dayGrid: DayGrid;
 	private hourGrid: HourGrid;
 	private dailyPieChart: DailyPieChart;
 	private updateInterval: number;
+
+	constructor(leaf: WorkspaceLeaf, writingStats: WritingStatsTracker) {
+		super(leaf);
+		this.writingStats = writingStats;
+	}
 
 	getViewType(): string {
 		return TIME_GRID_VIEW;
@@ -37,7 +44,7 @@ export class TimeGridView extends ItemView {
 		const wrapper = container.createDiv('tg-wrapper');
 
 		// 初始化三个组件
-		this.timeHeatmap = new TimeHeatmap(wrapper, this.app, {
+		this.timeHeatmap = new TimeHeatmap(wrapper, this.app, this.writingStats, {
 			onTitleClick: () => void openOrCreateTodayDailyNote(this.app),
 			onDateClick: (date) => void openOrCreateDailyNoteForDate(this.app, date, true),
 		});

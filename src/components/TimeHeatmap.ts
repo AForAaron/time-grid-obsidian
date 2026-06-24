@@ -2,6 +2,12 @@ import { App, TFile } from 'obsidian';
 import { appendIcon } from '../utils/icons';
 import { aggregateDurations, extractSimpleTimeTracker, getDailyNoteFilename } from '../utils/dailyNotesParser';
 import { getDailyNoteFileForDate } from '../utils/dailyNotes';
+import {
+	HEATMAP_RANGES,
+	HeatmapMode,
+	HeatmapRangeKey,
+	WritingStatsTracker,
+} from '../utils/writingStats';
 
 export type TimeHeatmapOptions = {
 	onTitleClick?: () => void;
@@ -11,20 +17,25 @@ export type TimeHeatmapOptions = {
 type HeatmapDay = {
 	date: Date;
 	dateKey: string;
-	durationMs: number;
+	value: number;
 	level: number;
-	intensity: number;
 	isToday: boolean;
 	isFuture: boolean;
 };
 
-const WEEKS_TO_SHOW = 26;
-const HOUR_MS = 60 * 60 * 1000;
-const LEVEL_STOPS = [1 * HOUR_MS, 4 * HOUR_MS, 8 * HOUR_MS, 12 * HOUR_MS];
+const MODE_LABELS: Record<HeatmapMode, string> = {
+	words: '字数',
+	time: '时间',
+};
+
+const RANGE_ORDER: HeatmapRangeKey[] = ['3m', '6m', '1y'];
+const MODE_ORDER: HeatmapMode[] = ['words', 'time'];
 
 export class TimeHeatmap {
 	private app: App;
+	private writingStats: WritingStatsTracker;
 	private container: HTMLElement;
+	private controls: HTMLElement;
 	private content: HTMLElement;
 	private grid: HTMLElement;
 	private monthLabels: HTMLElement;
@@ -32,26 +43,29 @@ export class TimeHeatmap {
 	private tooltip: HTMLElement;
 	private onTitleClick?: () => void;
 	private onDateClick?: (date: Date) => void;
-	private lastRenderedMinute = '';
-	private lastAutoScrollDateKey = '';
+	private lastRenderedKey = '';
+	private lastAutoScrollKey = '';
 	private refreshInFlight = false;
 	private fileCache = new Map<string, { mtime: number; content: string }>();
 
-	constructor(parent: HTMLElement, app: App, options?: TimeHeatmapOptions) {
+	constructor(parent: HTMLElement, app: App, writingStats: WritingStatsTracker, options?: TimeHeatmapOptions) {
 		this.app = app;
+		this.writingStats = writingStats;
 		this.container = parent.createDiv('tg-module tg-time-heatmap');
 		this.onTitleClick = options?.onTitleClick;
 		this.onDateClick = options?.onDateClick;
 
-		const header = this.container.createDiv('tg-module-header');
+		const header = this.container.createDiv('tg-module-header tg-heatmap-header');
 		const titleWrap = header.createDiv('tg-module-heading');
-		titleWrap.createSpan({ text: '时间热力图', cls: 'tg-module-title' });
+		titleWrap.createSpan({ text: '活动热力图', cls: 'tg-module-title' });
 		this.summary = titleWrap.createSpan({ cls: 'tg-heatmap-summary' });
 		appendIcon(header, 'month');
 		if (this.onTitleClick) {
 			header.addClass('tg-clickable');
 			header.addEventListener('click', this.onTitleClick);
 		}
+
+		this.controls = this.container.createDiv('tg-heatmap-controls');
 
 		const body = this.container.createDiv('tg-heatmap-body');
 		const weekLabels = body.createDiv('tg-heatmap-weekdays');
@@ -65,56 +79,112 @@ export class TimeHeatmap {
 
 		const legend = this.container.createDiv('tg-heatmap-legend');
 		legend.createSpan({ text: '少', cls: 'tg-heatmap-legend-label' });
+		const bar = legend.createDiv('tg-heatmap-legend-bar');
 		for (let level = 0; level <= 4; level++) {
-			const swatch = legend.createSpan({ cls: `tg-heatmap-legend-swatch level-${level}` });
-			swatch.setAttr('aria-hidden', 'true');
+			const segment = bar.createSpan({ cls: `tg-heatmap-legend-segment level-${level}` });
+			segment.setAttr('aria-hidden', 'true');
 		}
 		legend.createSpan({ text: '多', cls: 'tg-heatmap-legend-label' });
 
 		this.tooltip = this.container.createDiv('tg-heatmap-tooltip');
 		this.tooltip.hide();
+		this.renderControls();
 	}
 
 	update(now: Date): void {
-		const minuteKey = `${getDailyNoteFilename(now)}-${now.getHours()}-${now.getMinutes()}`;
-		if (minuteKey === this.lastRenderedMinute || this.refreshInFlight) {
+		const preferences = this.writingStats.getPreferences();
+		const renderKey = `${getDailyNoteFilename(now)}-${now.getHours()}-${now.getMinutes()}-${preferences.mode}-${preferences.range}-${this.writingStats.getRevision()}`;
+		if (renderKey === this.lastRenderedKey || this.refreshInFlight) {
 			return;
 		}
 
-		this.lastRenderedMinute = minuteKey;
+		this.lastRenderedKey = renderKey;
 		this.refreshInFlight = true;
 		void this.refresh(now).finally(() => {
 			this.refreshInFlight = false;
 		});
 	}
 
+	private renderControls(): void {
+		this.controls.empty();
+		this.createSegmentedControl(
+			MODE_ORDER,
+			this.writingStats.getPreferences().mode,
+			(value) => MODE_LABELS[value],
+			(mode) => this.updatePreferences({ mode })
+		);
+		this.createSegmentedControl(
+			RANGE_ORDER,
+			this.writingStats.getPreferences().range,
+			(value) => HEATMAP_RANGES[value].label.replace('近', ''),
+			(range) => this.updatePreferences({ range })
+		);
+	}
+
+	private createSegmentedControl<T extends string>(
+		values: T[],
+		activeValue: T,
+		getLabel: (value: T) => string,
+		onSelect: (value: T) => void
+	): void {
+		const group = this.controls.createDiv('tg-segmented');
+		values.forEach((value) => {
+			const button = group.createEl('button', { text: getLabel(value), cls: 'tg-segmented-button' });
+			button.type = 'button';
+			if (value === activeValue) {
+				button.addClass('active');
+			}
+			button.addEventListener('click', (event) => {
+				event.stopPropagation();
+				onSelect(value);
+			});
+		});
+	}
+
+	private updatePreferences(preferences: Partial<{ mode: HeatmapMode; range: HeatmapRangeKey }>): void {
+		this.lastRenderedKey = '';
+		this.lastAutoScrollKey = '';
+		void this.writingStats.setPreferences(preferences).then(() => {
+			this.renderControls();
+			this.update(new Date());
+		});
+	}
+
 	private async refresh(now: Date): Promise<void> {
-		const days = getVisibleDates(now);
-		const heatmapDays: HeatmapDay[] = [];
-		let totalMs = 0;
+		const preferences = this.writingStats.getPreferences();
+		const range = HEATMAP_RANGES[preferences.range];
+		const days = getVisibleDates(now, range.weeks);
+		const rawValues: Array<{ date: Date; dateKey: string; value: number; isToday: boolean; isFuture: boolean }> = [];
+		let total = 0;
 		let activeDays = 0;
+		let maxValue = 0;
 
 		for (const date of days) {
 			const dateKey = getDailyNoteFilename(date);
-			const durationMs = await this.getDurationForDate(date, now);
+			const value = await this.getValueForDate(date, now, preferences.mode);
 			const isToday = isSameDate(date, now);
 			const isFuture = startOfDay(date).getTime() > startOfDay(now).getTime();
-			if (durationMs > 0) {
+			if (value > 0) {
 				activeDays++;
-				totalMs += durationMs;
+				total += value;
+				maxValue = Math.max(maxValue, value);
 			}
-			heatmapDays.push({
-				date,
-				dateKey,
-				durationMs,
-				level: getLevel(durationMs),
-				intensity: getIntensity(durationMs),
-				isToday,
-				isFuture,
-			});
+			rawValues.push({ date, dateKey, value, isToday, isFuture });
 		}
 
-		this.render(now, heatmapDays, totalMs, activeDays);
+		const heatmapDays = rawValues.map((item) => ({
+			...item,
+			level: getLevel(item.value, maxValue),
+		}));
+
+		this.render(now, heatmapDays, activeDays, total, preferences.mode, preferences.range);
+	}
+
+	private async getValueForDate(date: Date, now: Date, mode: HeatmapMode): Promise<number> {
+		if (mode === 'words') {
+			return this.writingStats.getWordCountForDate(getDailyNoteFilename(date));
+		}
+		return this.getDurationForDate(date, now);
 	}
 
 	private async getDurationForDate(date: Date, now: Date): Promise<number> {
@@ -135,27 +205,34 @@ export class TimeHeatmap {
 		return aggregateDurations(data, referenceNow).reduce((sum, item) => sum + item.durationMs, 0);
 	}
 
-	private render(now: Date, days: HeatmapDay[], totalMs: number, activeDays: number): void {
+	private render(
+		now: Date,
+		days: HeatmapDay[],
+		activeDays: number,
+		total: number,
+		mode: HeatmapMode,
+		rangeKey: HeatmapRangeKey
+	): void {
+		const range = HEATMAP_RANGES[rangeKey];
 		this.monthLabels.empty();
 		this.grid.empty();
-		this.monthLabels.setAttr('style', `grid-template-columns: repeat(${WEEKS_TO_SHOW}, 10px);`);
-		this.summary.textContent = `${WEEKS_TO_SHOW}周 · ${activeDays}天 · ${formatDuration(totalMs)}`;
+		this.monthLabels.setAttr('style', `grid-template-columns: repeat(${range.weeks}, 10px);`);
+		this.summary.textContent = `${range.label}(${range.weeks}周) · ${activeDays}天 · ${formatTotalValue(total, mode)}`;
 		let todayCell: HTMLElement | null = null;
 		let todayDateKey = '';
 
-		getMonthLabels(now).forEach(({ label, week }) => {
+		getMonthLabels(now, range.weeks).forEach(({ label, week }) => {
 			const monthEl = this.monthLabels.createDiv({ text: label, cls: 'tg-heatmap-month-label' });
 			monthEl.setAttr('style', `grid-column: ${week + 1};`);
 		});
 
-		for (let week = 0; week < WEEKS_TO_SHOW; week++) {
+		for (let week = 0; week < range.weeks; week++) {
 			const column = this.grid.createDiv('tg-heatmap-week-column');
 			for (let day = 0; day < 7; day++) {
 				const dayData = days[week * 7 + day];
 				const cell = column.createDiv(`tg-heatmap-cell level-${dayData.level}`);
-				cell.setAttr('style', `--tg-intensity: ${dayData.intensity}%;`);
-				cell.setAttr('aria-label', `${dayData.dateKey} 记录 ${formatDuration(dayData.durationMs)}`);
-				cell.addEventListener('mouseenter', (event) => this.showTooltip(event, dayData));
+				cell.setAttr('aria-label', `${dayData.dateKey} ${formatTooltipValue(dayData.value, mode)}`);
+				cell.addEventListener('mouseenter', (event) => this.showTooltip(event, dayData, mode));
 				cell.addEventListener('mousemove', (event) => this.moveTooltip(event));
 				cell.addEventListener('mouseleave', () => this.hideTooltip());
 
@@ -174,15 +251,15 @@ export class TimeHeatmap {
 			}
 		}
 
-		this.scrollToToday(todayCell, todayDateKey);
+		this.scrollToToday(todayCell, `${rangeKey}-${todayDateKey}`);
 	}
 
-	private scrollToToday(todayCell: HTMLElement | null, todayDateKey: string): void {
-		if (!todayCell || !todayDateKey || this.lastAutoScrollDateKey === todayDateKey) {
+	private scrollToToday(todayCell: HTMLElement | null, todayKey: string): void {
+		if (!todayCell || !todayKey || this.lastAutoScrollKey === todayKey) {
 			return;
 		}
 
-		this.lastAutoScrollDateKey = todayDateKey;
+		this.lastAutoScrollKey = todayKey;
 		window.requestAnimationFrame(() => {
 			if (this.content.scrollWidth <= this.content.clientWidth) {
 				this.content.scrollLeft = 0;
@@ -198,10 +275,10 @@ export class TimeHeatmap {
 		});
 	}
 
-	private showTooltip(event: MouseEvent, dayData: HeatmapDay): void {
+	private showTooltip(event: MouseEvent, dayData: HeatmapDay, mode: HeatmapMode): void {
 		this.tooltip.empty();
 		this.tooltip.createEl('strong', { text: dayData.dateKey });
-		this.tooltip.createDiv({ text: `记录 ${formatDuration(dayData.durationMs)}` });
+		this.tooltip.createDiv({ text: formatTooltipValue(dayData.value, mode) });
 		this.tooltip.show();
 		this.moveTooltip(event);
 	}
@@ -215,25 +292,25 @@ export class TimeHeatmap {
 	}
 }
 
-function getVisibleDates(now: Date): Date[] {
+function getVisibleDates(now: Date, weeksToShow: number): Date[] {
 	const weekStart = getStartOfWeek(now);
 	const dates: Date[] = [];
-	for (let week = 0; week < WEEKS_TO_SHOW; week++) {
+	for (let week = 0; week < weeksToShow; week++) {
 		for (let day = 0; day < 7; day++) {
 			const date = new Date(weekStart);
-			date.setDate(weekStart.getDate() + (week - (WEEKS_TO_SHOW - 1)) * 7 + day);
+			date.setDate(weekStart.getDate() + (week - (weeksToShow - 1)) * 7 + day);
 			dates.push(date);
 		}
 	}
 	return dates;
 }
 
-function getMonthLabels(now: Date): Array<{ label: string; week: number }> {
+function getMonthLabels(now: Date, weeksToShow: number): Array<{ label: string; week: number }> {
 	const labels: Array<{ label: string; week: number }> = [];
 	let lastMonth = -1;
-	for (let week = 0; week < WEEKS_TO_SHOW; week++) {
+	for (let week = 0; week < weeksToShow; week++) {
 		const weekStart = getStartOfWeek(now);
-		weekStart.setDate(weekStart.getDate() + (week - (WEEKS_TO_SHOW - 1)) * 7);
+		weekStart.setDate(weekStart.getDate() + (week - (weeksToShow - 1)) * 7);
 		const month = weekStart.getMonth();
 		if (month !== lastMonth && weekStart.getDate() <= 7) {
 			labels.push({ label: `${month + 1}月`, week });
@@ -264,27 +341,25 @@ function isSameDate(a: Date, b: Date): boolean {
 		a.getDate() === b.getDate();
 }
 
-function getLevel(durationMs: number): number {
-	if (durationMs <= 0) {
+function getLevel(value: number, maxValue: number): number {
+	if (value <= 0 || maxValue <= 0) {
 		return 0;
 	}
-	if (durationMs < LEVEL_STOPS[0]) {
-		return 1;
-	}
-	if (durationMs < LEVEL_STOPS[1]) {
-		return 2;
-	}
-	if (durationMs < LEVEL_STOPS[2]) {
-		return 3;
-	}
-	return 4;
+	return Math.max(1, Math.min(4, Math.ceil((value / maxValue) * 4)));
 }
 
-function getIntensity(durationMs: number): number {
-	if (durationMs <= 0) {
-		return 0;
+function formatTotalValue(value: number, mode: HeatmapMode): string {
+	if (mode === 'words') {
+		return `${Math.round(value).toLocaleString()}字`;
 	}
-	return Math.min(100, Math.round((durationMs / LEVEL_STOPS[3]) * 100));
+	return formatDuration(value);
+}
+
+function formatTooltipValue(value: number, mode: HeatmapMode): string {
+	if (mode === 'words') {
+		return `新增 ${Math.round(value).toLocaleString()}字`;
+	}
+	return `记录 ${formatDuration(value)}`;
 }
 
 function formatDuration(ms: number): string {
