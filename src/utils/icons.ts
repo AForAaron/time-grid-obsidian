@@ -1,4 +1,4 @@
-export type TimeGridIcon = 'month' | 'day' | 'hour' | 'pie';
+export type TimeGridIcon = 'month' | 'day' | 'hour' | 'pie' | 'chevronLeft' | 'chevronRight';
 
 const iconSvg: Record<TimeGridIcon, string> = {
 	month: `
@@ -16,6 +16,14 @@ const iconSvg: Record<TimeGridIcon, string> = {
 	pie: `
 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 	<path d="M11 2v9H2a10 10 0 0 1 9-9zm2 0a10 10 0 1 1-4.9 18.7L13 11V2z"/>
+</svg>`,
+	chevronLeft: `
+<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+	<path d="M15.4 5.6L14 4.2L6.2 12l7.8 7.8l1.4-1.4L9 12l6.4-6.4z"/>
+</svg>`,
+	chevronRight: `
+<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+	<path d="M8.6 18.4L10 19.8l7.8-7.8L10 4.2L8.6 5.6L15 12l-6.4 6.4z"/>
 </svg>`,
 };
 

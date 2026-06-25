@@ -16,6 +16,7 @@ type HeatmapDay = {
 	date: Date;
 	dateKey: string;
 	value: number;
+	wordCount: number;
 	level: number;
 	isToday: boolean;
 	isFuture: boolean;
@@ -51,7 +52,10 @@ export class TimeHeatmap {
 		const titleWrap = header.createDiv('tg-module-heading');
 		titleWrap.createSpan({ text: '活动热力图', cls: 'tg-module-title' });
 		this.summary = titleWrap.createSpan({ cls: 'tg-heatmap-summary' });
-		appendIcon(header, 'month');
+		const actions = header.createDiv('tg-heatmap-actions');
+		this.createNavButton(actions, 'chevronLeft', '向左查看更早日期', -1);
+		this.createNavButton(actions, 'chevronRight', '向右查看更近日期', 1);
+		appendIcon(actions, 'month');
 		if (this.onTitleClick) {
 			header.addClass('tg-clickable');
 			header.addEventListener('click', this.onTitleClick);
@@ -98,7 +102,7 @@ export class TimeHeatmap {
 
 	private async refresh(now: Date): Promise<void> {
 		const days = getVisibleDates(now, FIXED_RANGE.weeks);
-		const rawValues: Array<{ date: Date; dateKey: string; value: number; isToday: boolean; isFuture: boolean }> = [];
+		const rawValues: Array<{ date: Date; dateKey: string; value: number; wordCount: number; isToday: boolean; isFuture: boolean }> = [];
 		let totalDuration = 0;
 		let totalWords = 0;
 		let timeActiveDays = 0;
@@ -116,7 +120,7 @@ export class TimeHeatmap {
 				totalDuration += value;
 				maxValue = Math.max(maxValue, value);
 			}
-			rawValues.push({ date, dateKey, value, isToday, isFuture });
+			rawValues.push({ date, dateKey, value, wordCount, isToday, isFuture });
 		}
 
 		const heatmapDays = rawValues.map((item) => ({
@@ -170,7 +174,7 @@ export class TimeHeatmap {
 			for (let day = 0; day < 7; day++) {
 				const dayData = days[week * 7 + day];
 				const cell = column.createDiv(`tg-heatmap-cell level-${dayData.level}`);
-				cell.setAttr('aria-label', `${dayData.dateKey} ${formatTooltipValue(dayData.value)}`);
+				cell.setAttr('aria-label', `${dayData.dateKey} ${formatTooltipValue(dayData.value, dayData.wordCount)}`);
 				cell.addEventListener('mouseenter', (event) => this.showTooltip(event, dayData));
 				cell.addEventListener('mousemove', (event) => this.moveTooltip(event));
 				cell.addEventListener('mouseleave', () => this.hideTooltip());
@@ -193,23 +197,59 @@ export class TimeHeatmap {
 		this.scrollToToday(todayCell, `${FIXED_RANGE_KEY}-${todayDateKey}`);
 	}
 
-	private scrollToToday(todayCell: HTMLElement | null, todayKey: string): void {
+	private createNavButton(parent: HTMLElement, icon: 'chevronLeft' | 'chevronRight', label: string, direction: -1 | 1): void {
+		const button = parent.createEl('button', {
+			cls: 'tg-heatmap-nav-button',
+			attr: {
+				type: 'button',
+				'aria-label': label,
+			},
+		});
+		appendIcon(button, icon);
+		button.addEventListener('click', (event) => {
+			event.stopPropagation();
+			this.scrollCalendar(direction);
+		});
+	}
+
+	private scrollCalendar(direction: -1 | 1): void {
+		const maxScroll = Math.max(0, this.content.scrollWidth - this.content.clientWidth);
+		if (maxScroll <= 0) {
+			return;
+		}
+
+		const step = Math.max(72, Math.floor(this.content.clientWidth * 0.75));
+		const target = Math.max(0, Math.min(this.content.scrollLeft + direction * step, maxScroll));
+		this.content.scrollTo({ left: target, behavior: 'smooth' });
+	}
+
+	private scrollToToday(todayCell: HTMLElement | null, todayKey: string, attempt = 0): void {
 		if (!todayCell || !todayKey || this.lastAutoScrollKey === todayKey) {
 			return;
 		}
 
 		this.lastAutoScrollKey = todayKey;
 		window.requestAnimationFrame(() => {
-			if (this.content.scrollWidth <= this.content.clientWidth) {
+			if (!this.content.isConnected || !todayCell.isConnected) {
+				return;
+			}
+
+			const cellRect = todayCell.getBoundingClientRect();
+			if ((this.content.clientWidth <= 0 || cellRect.width <= 0) && attempt < 2) {
+				this.lastAutoScrollKey = '';
+				window.setTimeout(() => this.scrollToToday(todayCell, todayKey, attempt + 1), 50);
+				return;
+			}
+
+			const maxScroll = this.content.scrollWidth - this.content.clientWidth;
+			if (maxScroll <= 0) {
 				this.content.scrollLeft = 0;
 				return;
 			}
 
 			const contentRect = this.content.getBoundingClientRect();
-			const cellRect = todayCell.getBoundingClientRect();
 			const centeredOffset = (this.content.clientWidth - cellRect.width) / 2;
 			const target = this.content.scrollLeft + (cellRect.left - contentRect.left) - centeredOffset;
-			const maxScroll = this.content.scrollWidth - this.content.clientWidth;
 			this.content.scrollLeft = Math.max(0, Math.min(target, maxScroll));
 		});
 	}
@@ -217,7 +257,7 @@ export class TimeHeatmap {
 	private showTooltip(event: MouseEvent, dayData: HeatmapDay): void {
 		this.tooltip.empty();
 		this.tooltip.createEl('strong', { text: dayData.dateKey });
-		this.tooltip.createDiv({ text: formatTooltipValue(dayData.value) });
+		this.tooltip.createDiv({ text: formatTooltipValue(dayData.value, dayData.wordCount) });
 		this.tooltip.show();
 		this.moveTooltip(event);
 	}
@@ -291,8 +331,8 @@ function formatWords(value: number): string {
 	return `${Math.round(value).toLocaleString()}字`;
 }
 
-function formatTooltipValue(value: number): string {
-	return `记录 ${formatDuration(value)}`;
+function formatTooltipValue(value: number, wordCount: number): string {
+	return `记录 ${formatDuration(value)} · 新增 ${formatWords(wordCount)}`;
 }
 
 function formatDuration(ms: number): string {

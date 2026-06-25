@@ -108,6 +108,46 @@
 	height: 18px;
 }
 
+.tg-heatmap-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex: 0 0 auto;
+}
+
+.tg-heatmap-nav-button {
+	appearance: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	min-width: 22px;
+	min-height: 22px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 4px;
+	background: transparent;
+	box-shadow: none;
+	color: var(--tg-muted);
+	cursor: pointer;
+}
+
+.tg-heatmap-nav-button:hover {
+	background: var(--background-modifier-hover);
+	color: var(--tg-text);
+}
+
+.tg-heatmap-nav-button:focus-visible {
+	box-shadow: 0 0 0 2px var(--tg-accent);
+}
+
+.tg-heatmap-nav-button .tg-icon svg {
+	width: 14px;
+	height: 14px;
+}
+
 .tg-heatmap-summary {
 	font-size: 13px;
 	line-height: 1.35;
@@ -154,7 +194,8 @@
 	gap: 5px;
 	min-width: 0;
 	overflow-x: auto;
-	padding-bottom: 1px;
+	padding-right: 4px;
+	padding-bottom: 3px;
 	scrollbar-width: none;
 }
 
@@ -208,7 +249,7 @@
 }
 
 .tg-heatmap-cell.today {
-	box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--text-normal) 82%, var(--tg-accent)), 0 0 0 3px var(--tg-panel-bg);
+	box-shadow: 0 0 0 1.5px var(--tg-accent), 0 0 0 3px var(--tg-panel-bg);
 }
 
 .tg-heatmap-cell.tg-clickable {
