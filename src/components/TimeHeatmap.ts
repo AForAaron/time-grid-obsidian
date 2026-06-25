@@ -160,7 +160,7 @@ export class TimeHeatmap {
 		this.grid.empty();
 		this.monthLabels.setAttr('style', `grid-template-columns: repeat(${FIXED_RANGE.weeks}, var(--tg-heatmap-cell-size));`);
 		this.summary.textContent =
-			`${FIXED_RANGE.label}(${FIXED_RANGE.weeks}周) · 计时 ${timeActiveDays}天 / ${formatDuration(totalDuration)} · 新增 ${formatWords(totalWords)}`;
+			`${FIXED_RANGE.label}(${FIXED_RANGE.weeks}周) · 计时 ${timeActiveDays}天 / ${formatDuration(totalDuration)} · 净增 ${formatWords(totalWords)}`;
 		let todayCell: HTMLElement | null = null;
 		let todayDateKey = '';
 
@@ -332,7 +332,7 @@ function formatWords(value: number): string {
 }
 
 function formatTooltipValue(value: number, wordCount: number): string {
-	return `记录 ${formatDuration(value)} · 新增 ${formatWords(wordCount)}`;
+	return `记录 ${formatDuration(value)} · 净增 ${formatWords(wordCount)}`;
 }
 
 function formatDuration(ms: number): string {

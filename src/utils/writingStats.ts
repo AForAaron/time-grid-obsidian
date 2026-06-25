@@ -126,7 +126,7 @@ export class WritingStatsTracker {
 		}
 
 		const delta = currentCount - previousCount;
-		if (delta > 0) {
+		if (delta !== 0) {
 			const todayKey = getDailyNoteFilename(new Date());
 			this.data.writingStats.dailyWordIncrements[todayKey] =
 				(this.data.writingStats.dailyWordIncrements[todayKey] ?? 0) + delta;

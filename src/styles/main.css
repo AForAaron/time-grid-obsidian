@@ -87,6 +87,7 @@
 	--tg-heatmap-level-2: color-mix(in srgb, var(--tg-accent) 45%, var(--background-primary));
 	--tg-heatmap-level-3: color-mix(in srgb, var(--tg-accent) 63%, var(--background-primary));
 	--tg-heatmap-level-4: color-mix(in srgb, var(--tg-accent) 86%, white);
+	--tg-heatmap-today-ring: color-mix(in srgb, #ffd166 82%, var(--text-normal));
 
 	container: tg-heatmap / inline-size;
 	padding: 18px 18px 15px;
@@ -249,7 +250,16 @@
 }
 
 .tg-heatmap-cell.today {
-	box-shadow: 0 0 0 1.5px var(--tg-accent), 0 0 0 3px var(--tg-panel-bg);
+	z-index: 1;
+}
+
+.tg-heatmap-cell.today::after {
+	content: "";
+	position: absolute;
+	inset: -3px;
+	border: 1.5px solid var(--tg-heatmap-today-ring);
+	border-radius: 999px;
+	pointer-events: none;
 }
 
 .tg-heatmap-cell.tg-clickable {
