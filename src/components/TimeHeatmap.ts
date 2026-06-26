@@ -146,7 +146,8 @@ export class TimeHeatmap {
 
 		const data = extractSimpleTimeTracker(content ?? '');
 		const referenceNow = isSameDate(date, now) ? now : endOfDay(date);
-		return aggregateDurations(data, referenceNow).reduce((sum, item) => sum + item.durationMs, 0);
+		return aggregateDurations(data, referenceNow, startOfDay(date), endOfDay(date))
+			.reduce((sum, item) => sum + item.durationMs, 0);
 	}
 
 	private render(
