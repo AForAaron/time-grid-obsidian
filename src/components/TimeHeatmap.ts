@@ -111,16 +111,17 @@ export class TimeHeatmap {
 		for (const date of days) {
 			const dateKey = getDailyNoteFilename(date);
 			const value = await this.getDurationForDate(date, now);
+			const displayValue = getDisplayedDurationMs(value);
 			const wordCount = this.writingStats.getWordCountForDate(dateKey);
 			const isToday = isSameDate(date, now);
 			const isFuture = startOfDay(date).getTime() > startOfDay(now).getTime();
 			totalWords += wordCount;
-			if (value > 0) {
+			if (displayValue > 0) {
 				timeActiveDays++;
-				totalDuration += value;
-				maxValue = Math.max(maxValue, value);
+				totalDuration += displayValue;
+				maxValue = Math.max(maxValue, displayValue);
 			}
-			rawValues.push({ date, dateKey, value, wordCount, isToday, isFuture });
+			rawValues.push({ date, dateKey, value: displayValue, wordCount, isToday, isFuture });
 		}
 
 		const heatmapDays = rawValues.map((item) => ({
@@ -181,12 +182,12 @@ export class TimeHeatmap {
 				cell.addEventListener('mouseleave', () => this.hideTooltip());
 
 				if (dayData.isToday) {
-					cell.addClass('today');
+					cell.addClass('tg-heatmap-today');
 					todayCell = cell;
 					todayDateKey = dayData.dateKey;
 				}
 				if (dayData.isFuture) {
-					cell.addClass('future');
+					cell.addClass('tg-heatmap-future');
 				}
 				if (this.onDateClick) {
 					cell.addClass('tg-clickable');
@@ -326,6 +327,10 @@ function getLevel(value: number, maxValue: number): number {
 		return 0;
 	}
 	return Math.max(1, Math.min(4, Math.ceil((value / maxValue) * 4)));
+}
+
+function getDisplayedDurationMs(ms: number): number {
+	return Math.floor(Math.max(0, ms) / 60000) * 60000;
 }
 
 function formatWords(value: number): string {

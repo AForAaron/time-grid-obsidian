@@ -245,15 +245,15 @@
 .tg-heatmap-cell.level-3 { background: var(--tg-heatmap-level-3); }
 .tg-heatmap-cell.level-4 { background: var(--tg-heatmap-level-4); }
 
-.tg-heatmap-cell.future {
+.tg-heatmap-cell.tg-heatmap-future {
 	opacity: 0.45;
 }
 
-.tg-heatmap-cell.today {
+.tg-heatmap-cell.tg-heatmap-today {
 	z-index: 1;
 }
 
-.tg-heatmap-cell.today::after {
+.tg-heatmap-cell.tg-heatmap-today::after {
 	content: "";
 	position: absolute;
 	inset: -3px;
